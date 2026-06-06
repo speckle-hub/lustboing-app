@@ -638,7 +638,6 @@ function openPlayer(video) {
       title="${escapeHtml(video.title)}"
     ></iframe>
   `;
-  }
 
   /* Show delete button only for admins */
   if (deleteBtn) deleteBtn.classList.toggle('hidden', !state.isAdmin);
