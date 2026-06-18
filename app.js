@@ -555,15 +555,7 @@ function buildCard(video, index) {
     </div>
   `;
 
-  el.addEventListener('click', () => {
-    /* xHamster blocks iframe embedding — open directly */
-    if (video.platform === 'xhamster') {
-      const url = video.videoUrl || `https://xhamster.com/videos/${video.videoId}`;
-      window.open(url, '_blank');
-      return;
-    }
-    openPlayer(video);
-  });
+  el.addEventListener('click', () => openPlayer(video));
   el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openPlayer(video); });
 
   return el;
@@ -634,18 +626,35 @@ function openPlayer(video) {
 
   sourceLink.href = video.videoUrl || platform.sourceBase(video.videoId);
 
-  iframeWrap.innerHTML = `
-    <iframe
-      id="embed-iframe"
-      src="${platform.embedBase(video.videoId)}"
-      frameborder="0"
-      scrolling="no"
-      allowfullscreen
-      allow="autoplay; fullscreen"
-      loading="eager"
-      title="${escapeHtml(video.title)}"
-    ></iframe>
-  `;
+  /* Use HTML5 video player if stream URL available, otherwise iframe */
+  if (video.streamUrl) {
+    iframeWrap.innerHTML = `
+      <video
+        id="embed-video"
+        controls
+        autoplay
+        playsinline
+        style="position:absolute;inset:0;width:100%;height:100%;background:#000;"
+        poster="${escapeHtml(video.thumbUrl || '')}"
+      >
+        <source src="${escapeHtml(video.streamUrl)}" type="video/mp4">
+        Your browser does not support HTML5 video.
+      </video>
+    `;
+  } else {
+    iframeWrap.innerHTML = `
+      <iframe
+        id="embed-iframe"
+        src="${platform.embedBase(video.videoId)}"
+        frameborder="0"
+        scrolling="no"
+        allowfullscreen
+        allow="autoplay; fullscreen"
+        loading="eager"
+        title="${escapeHtml(video.title)}"
+      ></iframe>
+    `;
+  }
 
   /* Show delete button only for admins */
   if (deleteBtn) deleteBtn.classList.toggle('hidden', !state.isAdmin);
@@ -661,6 +670,10 @@ function openPlayer(video) {
 function closeModal() {
   const modal      = document.getElementById('player-modal');
   const iframeWrap = document.getElementById('modal-iframe-wrap');
+
+  /* Pause video if playing */
+  const video = document.getElementById('embed-video');
+  if (video) video.pause();
 
   modal.style.opacity = '0';
   setTimeout(() => {

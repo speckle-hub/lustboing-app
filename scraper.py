@@ -9,6 +9,8 @@ import sys
 import re
 import time
 import io
+import json
+import subprocess
 import requests
 from bs4 import BeautifulSoup
 import firebase_admin
@@ -160,6 +162,28 @@ def fetch_video_details(url):
         print(f"    [WARN] Detail fetch failed: {e}")
         return {}
 
+def extract_video_stream_url(video_url):
+    """Use yt-dlp to extract the actual MP4/HLS stream URL."""
+    try:
+        result = subprocess.run(
+            ['python', '-m', 'yt_dlp', '--dump-json', video_url],
+            capture_output=True, text=True, timeout=30
+        )
+        if result.returncode == 0:
+            data = json.loads(result.stdout)
+            # Prefer MP4 format, fallback to HLS
+            formats = data.get('formats', [])
+            mp4 = [f for f in formats if f.get('ext') == 'mp4' and f.get('vcodec') != 'none']
+            if mp4:
+                # Get best quality MP4
+                best = sorted(mp4, key=lambda x: x.get('height', 0), reverse=True)[0]
+                return best.get('url', '')
+            # Fallback to main URL (usually HLS)
+            return data.get('url', '')
+    except Exception as e:
+        print(f"    [WARN] yt-dlp failed: {e}")
+    return ''
+
 # ── Main Scraper ────────────────────────────────────────────────────────────
 def scrape_videos(pornstar_limit=10):
     """Search for each pornstar by name and add their videos."""
@@ -187,7 +211,7 @@ def scrape_videos(pornstar_limit=10):
 
             print(f"  [{vid_id}] Fetching details...")
             details = fetch_video_details(vid["url"])
-            time.sleep(1.5)
+            time.sleep(1)
 
             title = details.get("title") or vid["title"] or "Untitled"
             thumbnail = details.get("thumbnail") or vid["thumb"] or ""
@@ -195,6 +219,11 @@ def scrape_videos(pornstar_limit=10):
             views = details.get("views", "--")
             categories = details.get("categories", [])
             tags = details.get("tags", [])
+
+            # Extract actual stream URL via yt-dlp
+            print(f"  [{vid_id}] Extracting stream URL...")
+            stream_url = extract_video_stream_url(vid["url"])
+            time.sleep(1)
 
             category = match_category(tags + categories, title)
 
@@ -210,6 +239,7 @@ def scrape_videos(pornstar_limit=10):
                 "platform": "xhamster",
                 "videoId": vid_id,
                 "videoUrl": vid["url"],
+                "streamUrl": stream_url,
                 "title": title,
                 "duration": duration,
                 "views": views,
