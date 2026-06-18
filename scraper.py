@@ -209,6 +209,7 @@ def scrape_videos(pornstar_limit=10):
             video_doc = {
                 "platform": "xhamster",
                 "videoId": vid_id,
+                "videoUrl": vid["url"],
                 "title": title,
                 "duration": duration,
                 "views": views,
