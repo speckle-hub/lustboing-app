@@ -57,7 +57,7 @@ const PLATFORMS = {
   pornhub:  { name: 'Pornhub',  color: '#ff9000', icon: '🟠', embedBase: (id) => `https://www.pornhub.com/embed/${id}`,              sourceBase: (id) => `https://www.pornhub.com/view_video.php?viewkey=${id}` },
   xvideos:  { name: 'XVideos',  color: '#cc0000', icon: '🔴', embedBase: (id) => `https://www.xvideos.com/embedframe/${id}`,          sourceBase: (id) => `https://www.xvideos.com/video${id}` },
   xnxx:     { name: 'XNXX',     color: '#d63031', icon: '🔴', embedBase: (id) => `https://www.xnxx.com/embedframe/${id}`,             sourceBase: (id) => `https://www.xnxx.com/video-${id}` },
-  xhamster: { name: 'xHamster', color: '#f9a825', icon: '🟡', embedBase: (id) => `https://xhamster.com/xembed.php?video=${id}`,       sourceBase: (id) => `https://xhamster.com/videos/${id}`, externalEmbed: true },
+  xhamster: { name: 'xHamster', color: '#f9a825', icon: '🟡', embedBase: (id) => `https://xhamster.com/xembed.php?video=${id}`,       sourceBase: (id) => `https://xhamster.com/videos/${id}` },
   youporn:  { name: 'YouPorn',  color: '#e91e63', icon: '🩷', embedBase: (id) => `https://www.youporn.com/embed/${id}`,               sourceBase: (id) => `https://www.youporn.com/watch/${id}` },
   redtube:  { name: 'RedTube',  color: '#e53935', icon: '🔴', embedBase: (id) => `https://embed.redtube.com/?id=${id}&bgcolor=000000`, sourceBase: (id) => `https://www.redtube.com/${id}` },
 };
@@ -626,34 +626,18 @@ function openPlayer(video) {
 
   sourceLink.href = video.videoUrl || platform.sourceBase(video.videoId);
 
-  /* Platforms that block iframe embedding (xHamster) — show direct link */
-  if (platform.externalEmbed) {
-    const sourceUrl = video.videoUrl || platform.sourceBase(video.videoId);
-    iframeWrap.innerHTML = `
-      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:20px;text-align:center;padding:40px;">
-        <div style="font-size:48px;">${platform.icon}</div>
-        <h3 style="color:#fff;margin:0;">${escapeHtml(video.title)}</h3>
-        <p style="color:rgba(255,255,255,.6);margin:0;">This video plays on ${platform.name}</p>
-        <a href="${sourceUrl}" target="_blank" rel="noopener noreferrer" class="btn btn--primary btn--lg">
-          <span>Play on ${platform.name}</span>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6M15 3h6v6M10 14L21 3"/></svg>
-        </a>
-      </div>
-    `;
-  } else {
-    iframeWrap.innerHTML = `
-      <iframe
-        id="embed-iframe"
-        src="${platform.embedBase(video.videoId)}"
-        frameborder="0"
-        scrolling="no"
-        allowfullscreen
-        allow="autoplay; fullscreen"
-        loading="eager"
-        title="${escapeHtml(video.title)}"
-      ></iframe>
-    `;
-  }
+  iframeWrap.innerHTML = `
+    <iframe
+      id="embed-iframe"
+      src="${platform.embedBase(video.videoId)}"
+      frameborder="0"
+      scrolling="no"
+      allowfullscreen
+      allow="autoplay; fullscreen"
+      loading="eager"
+      title="${escapeHtml(video.title)}"
+    ></iframe>
+  `;
 
   /* Show delete button only for admins */
   if (deleteBtn) deleteBtn.classList.toggle('hidden', !state.isAdmin);
