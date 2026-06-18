@@ -555,7 +555,15 @@ function buildCard(video, index) {
     </div>
   `;
 
-  el.addEventListener('click', () => openPlayer(video));
+  el.addEventListener('click', () => {
+    /* xHamster blocks iframe embedding — open directly */
+    if (video.platform === 'xhamster') {
+      const url = video.videoUrl || `https://xhamster.com/videos/${video.videoId}`;
+      window.open(url, '_blank');
+      return;
+    }
+    openPlayer(video);
+  });
   el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openPlayer(video); });
 
   return el;
