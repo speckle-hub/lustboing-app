@@ -6,6 +6,27 @@
 
 'use strict';
 
+/* ── Backend server config ──────────────────────────── */
+const BACKEND_URL = window.location.origin; // same origin as the page (server.js)
+
+/* ── Fetch a fresh stream URL from the backend ────── */
+async function fetchFreshStreamUrl(videoUrl) {
+  try {
+    const resp = await fetch(`${BACKEND_URL}/api/stream?url=${encodeURIComponent(videoUrl)}`, {
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!resp.ok) {
+      console.warn('[stream] Backend returned', resp.status);
+      return null;
+    }
+    const data = await resp.json();
+    return data.streamUrl || null;
+  } catch (err) {
+    console.warn('[stream] Failed to fetch fresh stream URL:', err.message);
+    return null;
+  }
+}
+
 /* ══════════════════════════════════════════════════
    FIREBASE CONFIG  ← PASTE YOUR CONFIG HERE
    Get this from: Firebase Console → Project Settings → Your Apps
@@ -43,9 +64,9 @@ let firebaseReady = false;
     firebaseReady = !!(auth && db);
     
     if (firebaseReady) {
-      console.log('✅ Firebase initialized');
+      console.log('Firebase initialized');
     } else {
-      console.warn('⚠️ Firebase partial init');
+      console.warn('Firebase partial init');
     }
   } catch(e) {
     console.warn('Firebase error:', e.message);
@@ -262,12 +283,12 @@ async function signInAdmin() {
 
   if (!email || !password) { showLoginError('Please enter your email and password.'); return; }
 
-  if (btn) { btn.disabled = true; btn.querySelector('span').textContent = 'Logging in…'; }
+  if (btn) { btn.disabled = true; btn.querySelector('span').textContent = 'Logging in'; }
 
   try {
     await auth.signInWithEmailAndPassword(email, password);
     closeLoginModal();
-    showToast('✅ Logged in as Admin!');
+    showToast('Logged in as Admin!');
     openAddModal();
   } catch (e) {
     showLoginError('Invalid email or password.');
@@ -283,12 +304,12 @@ async function registerAdmin() {
 
   if (!email || !password) { showLoginError('Please enter your email and password.'); return; }
 
-  if (btn) { btn.disabled = true; btn.querySelector('span').textContent = 'Creating account…'; }
+  if (btn) { btn.disabled = true; btn.querySelector('span').textContent = 'Creating account'; }
 
   try {
     await auth.createUserWithEmailAndPassword(email, password);
     closeLoginModal();
-    showToast('✅ Account registered & logged in!');
+    showToast('Account registered & logged in!');
     openAddModal();
   } catch (e) {
     showLoginError(e.message || 'Failed to create account.');
@@ -303,7 +324,7 @@ async function loginWithGoogle() {
   try {
     await auth.signInWithPopup(provider);
     closeLoginModal();
-    showToast('✅ Logged in with Google!');
+    showToast('Logged in with Google!');
     openAddModal();
   } catch (e) {
     showLoginError(e.message || 'Google sign-in failed.');
@@ -317,7 +338,7 @@ function showLoginError(msg) {
 
 async function logoutAdmin() {
   await auth.signOut();
-  showToast('👋 Logged out.');
+  showToast('Logged out.');
 }
 
 function togglePasswordVisibility() {
@@ -327,12 +348,12 @@ function togglePasswordVisibility() {
   if (passInput.type === 'password') {
     passInput.type = 'text';
     if (eyeIcon) {
-      eyeIcon.innerHTML = `<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>`;
+      eyeIcon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line>';
     }
   } else {
     passInput.type = 'password';
     if (eyeIcon) {
-      eyeIcon.innerHTML = `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
+      eyeIcon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
     }
   }
 }
@@ -626,36 +647,6 @@ function openPlayer(video) {
 
   sourceLink.href = video.videoUrl || platform.sourceBase(video.videoId);
 
-  /* Use HTML5 video player if stream URL available, otherwise iframe */
-  if (video.streamUrl) {
-    iframeWrap.innerHTML = `
-      <video
-        id="embed-video"
-        controls
-        autoplay
-        playsinline
-        style="position:absolute;inset:0;width:100%;height:100%;background:#000;"
-        poster="${escapeHtml(video.thumbUrl || '')}"
-      >
-        <source src="${escapeHtml(video.streamUrl)}" type="video/mp4">
-        Your browser does not support HTML5 video.
-      </video>
-    `;
-  } else {
-    iframeWrap.innerHTML = `
-      <iframe
-        id="embed-iframe"
-        src="${platform.embedBase(video.videoId)}"
-        frameborder="0"
-        scrolling="no"
-        allowfullscreen
-        allow="autoplay; fullscreen"
-        loading="eager"
-        title="${escapeHtml(video.title)}"
-      ></iframe>
-    `;
-  }
-
   /* Show delete button only for admins */
   if (deleteBtn) deleteBtn.classList.toggle('hidden', !state.isAdmin);
 
@@ -665,9 +656,121 @@ function openPlayer(video) {
   requestAnimationFrame(() => {
     document.getElementById('btn-modal-close')?.focus();
   });
+
+  /* Load the video player content (async) */
+  loadPlayerContent(video, platform, iframeWrap);
+}
+
+let playerStalledTimeout = null;
+
+/* Load video — tries backend proxy first, then fallbacks */
+async function loadPlayerContent(video, platform, iframeWrap) {
+  /* Show loading state immediately */
+  iframeWrap.innerHTML = `
+    <div class="player-loading" id="player-loading">
+      <div class="loading-spinner"></div>
+      <span class="loading-text">Loading stream...</span>
+    </div>
+  `;
+
+  /* Global stalled timeout while loading */
+  clearTimeout(playerStalledTimeout);
+  playerStalledTimeout = setTimeout(() => {
+    const loadingEl = document.getElementById('player-loading');
+    if (loadingEl) {
+      const textEl = loadingEl.querySelector('.loading-text');
+      if (textEl) textEl.textContent = 'Still loading... check your connection';
+    }
+  }, 25000);
+
+  const videoUrl = video.videoUrl || platform.sourceBase(video.videoId);
+
+  try {
+    /* 1) Try to get a FRESH stream URL from the backend (resolves expiry + CORS) */
+    const freshStreamUrl = await fetchFreshStreamUrl(videoUrl);
+
+    if (freshStreamUrl) {
+      clearTimeout(playerStalledTimeout);
+      /* Use the proxy endpoint to avoid CORS issues with CDNs */
+      const proxyUrl = `${BACKEND_URL}/api/proxy?url=${encodeURIComponent(freshStreamUrl)}`;
+      renderVideoPlayer(iframeWrap, proxyUrl, video.thumbUrl, video.title);
+      return;
+    }
+
+    /* 2) If backend unavailable, try the stored streamUrl directly */
+    if (video.streamUrl) {
+      clearTimeout(playerStalledTimeout);
+      console.warn('[player] Backend unavailable, trying stored stream URL');
+      renderVideoPlayer(iframeWrap, video.streamUrl, video.thumbUrl, video.title);
+      return;
+    }
+
+    /* 3) Last resort: iframe embed */
+    clearTimeout(playerStalledTimeout);
+    console.warn('[player] No stream URL, falling back to iframe embed');
+    renderEmbedIframe(iframeWrap, platform, video);
+  } catch (err) {
+    clearTimeout(playerStalledTimeout);
+    console.error('[player] Error loading video:', err);
+    /* Final fallback to iframe */
+    renderEmbedIframe(iframeWrap, platform, video);
+  }
+}
+
+/* Render HTML5 video player */
+function renderVideoPlayer(container, src, poster, title) {
+  container.innerHTML = `
+    <video
+      id="embed-video"
+      controls
+      autoplay
+      playsinline
+      style="position:absolute;inset:0;width:100%;height:100%;background:#000;"
+      poster="${escapeHtml(poster || '')}"
+    >
+      <source src="${escapeHtml(src)}" type="video/mp4">
+      Your browser does not support HTML5 video.
+    </video>
+  `;
+
+  const videoEl = document.getElementById('embed-video');
+
+  /* Error handler: if video fails, try iframe fallback */
+  videoEl.addEventListener('error', () => {
+    clearTimeout(playerStalledTimeout);
+    console.warn('[player] Video error, trying iframe fallback');
+    const currentVideo = state.activeVideo;
+    if (currentVideo) {
+      const plat = PLATFORMS[currentVideo.platform];
+      if (plat) {
+        renderEmbedIframe(container, plat, currentVideo);
+      }
+    }
+  }, { once: true });
+
+  videoEl.addEventListener('playing', () => clearTimeout(playerStalledTimeout), { once: true });
+}
+
+/* Render iframe embed (final fallback) */
+function renderEmbedIframe(container, platform, video) {
+  container.innerHTML = `
+    <iframe
+      id="embed-iframe"
+      src="${platform.embedBase(video.videoId)}"
+      frameborder="0"
+      scrolling="no"
+      allowfullscreen
+      allow="autoplay; fullscreen"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+      title="${escapeHtml(video.title)}"
+      referrerpolicy="no-referrer"
+    ></iframe>
+  `;
 }
 
 function closeModal() {
+  clearTimeout(playerStalledTimeout);
+
   const modal      = document.getElementById('player-modal');
   const iframeWrap = document.getElementById('modal-iframe-wrap');
 
@@ -693,9 +796,9 @@ async function deleteActiveVideo() {
     await db.collection('videos').doc(id).delete();
     state.activeVideo = null;
     closeModal();
-    showToast(`🗑️ "${title}" deleted!`);
+    showToast(`"${title}" deleted!`);
   } catch (e) {
-    showToast('❌ Delete failed. Check your connection.');
+    showToast('Delete failed. Check your connection.');
     console.error(e);
   }
 }
@@ -826,8 +929,8 @@ async function addCustomEmbed() {
   const durVal   = document.getElementById('add-duration')?.value.trim() || '--:--';
   let thumbUrl   = document.getElementById('add-thumburl')?.value.trim() || null;
 
-  if (!title) { showToast('⚠️ Please enter a video title'); return; }
-  if (!raw)   { showToast('⚠️ Please enter a video ID or URL'); return; }
+  if (!title) { showToast('Please enter a video title'); return; }
+  if (!raw)   { showToast('Please enter a video ID or URL'); return; }
 
   if (thumbUrl && !thumbUrl.startsWith('http')) {
     thumbUrl = 'https://' + thumbUrl;
@@ -854,7 +957,7 @@ async function addCustomEmbed() {
   };
 
   const btn = document.getElementById('btn-confirm-add');
-  if (btn) { btn.textContent = 'Saving…'; btn.disabled = true; }
+  if (btn) { btn.textContent = 'Saving'; btn.disabled = true; }
 
   try {
     await db.collection('videos').add(newVideo);
@@ -870,10 +973,10 @@ async function addCustomEmbed() {
     });
 
     closeAddModal();
-    showToast(`✅ "${title}" added!`);
+    showToast(`"${title}" added!`);
     document.getElementById('main-content')?.scrollIntoView({ behavior: 'smooth' });
   } catch (e) {
-    showToast('❌ Failed to save. Check your Firebase config.');
+    showToast('Failed to save. Check your Firebase config.');
     console.error(e);
   } finally {
     if (btn) { btn.textContent = 'Add Video'; btn.disabled = false; }
@@ -1019,5 +1122,3 @@ document.getElementById('login-password')?.addEventListener('keydown', e => {
     /* Filtering will happen automatically on first Firestore snapshot */
   }
 })();
-
-
