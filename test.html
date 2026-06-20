@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Embed Test</title>
+</head>
+<body>
+  <h1>Test 1: Strict Sandbox (No Popups)</h1>
+  <iframe
+      src="https://xhamster.com/embed/18540329"
+      frameborder="0"
+      scrolling="no"
+      width="640" height="360"
+      allowfullscreen
+      allow="autoplay; fullscreen"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+    ></iframe>
+
+  <h1>Test 2: Legacy xembed.php Strict Sandbox</h1>
+  <iframe
+      src="https://xhamster.com/xembed.php?video=18540329"
+      frameborder="0"
+      scrolling="no"
+      width="640" height="360"
+      allowfullscreen
+      allow="autoplay; fullscreen"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+    ></iframe>
+</body>
+</html>
