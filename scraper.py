@@ -8,16 +8,13 @@ import os
 import sys
 import re
 import time
-import io
 import json
 import subprocess
-import requests
+from google.cloud.firestore import FieldFilter
+import cloudscraper
 from bs4 import BeautifulSoup
 import firebase_admin
 from firebase_admin import credentials, firestore
-
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
 # ── Firebase Setup ──────────────────────────────────────────────────────────
 SERVICE_ACCOUNT_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "lustboing-firebase-adminsdk-fbsvc-75a875842e.json")
@@ -54,6 +51,9 @@ CATEGORY_KEYWORDS = {
     "Ebony MILF": ["ebony"],
 }
 
+# Bypass Cloudflare protection on xHamster
+SCRAPER = cloudscraper.create_scraper()
+
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
     "Accept-Language": "en-US,en;q=0.9",
@@ -76,9 +76,9 @@ def match_category(tags, title):
 def search_xhamster(query, page=1):
     url = f"https://xhamster.com/search/{query}?page={page}"
     try:
-        resp = requests.get(url, headers=HEADERS, timeout=30)
+        resp = SCRAPER.get(url, headers=HEADERS, timeout=30)
         if resp.status_code != 200:
-            print(f"  [WARN] Search returned {resp.status_code}")
+            print(f"  [WARN] Search returned {resp.status_code}", flush=True)
             return []
         soup = BeautifulSoup(resp.text, "html.parser")
         results = []
@@ -115,12 +115,12 @@ def search_xhamster(query, page=1):
 
         return results
     except Exception as e:
-        print(f"  [ERROR] Search failed: {e}")
+        print(f"  [ERROR] Search failed: {e}", flush=True)
         return []
 
 def fetch_video_details(url):
     try:
-        resp = requests.get(url, headers=HEADERS, timeout=20)
+        resp = SCRAPER.get(url, headers=HEADERS, timeout=20)
         if resp.status_code != 200:
             return {}
         soup = BeautifulSoup(resp.text, "html.parser")
@@ -159,14 +159,14 @@ def fetch_video_details(url):
 
         return details
     except Exception as e:
-        print(f"    [WARN] Detail fetch failed: {e}")
+        print(f"    [WARN] Detail fetch failed: {e}", flush=True)
         return {}
 
 def extract_video_stream_url(video_url):
     """Use yt-dlp to extract the actual MP4/HLS stream URL."""
     try:
         result = subprocess.run(
-            ['python', '-m', 'yt_dlp', '--dump-json', video_url],
+            [sys.executable, '-m', 'yt_dlp', '--dump-json', video_url],
             capture_output=True, text=True, timeout=30
         )
         if result.returncode == 0:
@@ -181,7 +181,7 @@ def extract_video_stream_url(video_url):
             # Fallback to main URL (usually HLS)
             return data.get('url', '')
     except Exception as e:
-        print(f"    [WARN] yt-dlp failed: {e}")
+        print(f"    [WARN] yt-dlp failed: {e}", flush=True)
     return ''
 
 # ── Main Scraper ────────────────────────────────────────────────────────────
@@ -191,9 +191,9 @@ def scrape_videos(pornstar_limit=10):
     skipped = 0
 
     for pornstar_name in PORNSTAR_DB:
-        print(f"\n[STAR] Searching: {pornstar_name}")
+        print(f"\n[STAR] Searching: {pornstar_name}", flush=True)
         results = search_xhamster(pornstar_name, page=1)
-        print(f"  Found {len(results)} videos")
+        print(f"  Found {len(results)} videos", flush=True)
 
         pornstar_added = 0
         for vid in results:
@@ -203,13 +203,13 @@ def scrape_videos(pornstar_limit=10):
             vid_id = vid["id"]
 
             # Check Firestore duplicate
-            existing = db.collection("videos").where("videoId", "==", vid_id).limit(1).get()
+            existing = db.collection("videos").where(filter=FieldFilter("videoId", "==", vid_id)).limit(1).get()
             if list(existing):
-                print(f"  [{vid_id}] SKIP - already in DB")
+                print(f"  [{vid_id}] SKIP - already in DB", flush=True)
                 skipped += 1
                 continue
 
-            print(f"  [{vid_id}] Fetching details...")
+            print(f"  [{vid_id}] Fetching details...", flush=True)
             details = fetch_video_details(vid["url"])
             time.sleep(1)
 
@@ -221,7 +221,7 @@ def scrape_videos(pornstar_limit=10):
             tags = details.get("tags", [])
 
             # Extract actual stream URL via yt-dlp
-            print(f"  [{vid_id}] Extracting stream URL...")
+            print(f"  [{vid_id}] Extracting stream URL...", flush=True)
             stream_url = extract_video_stream_url(vid["url"])
             time.sleep(1)
 
@@ -255,22 +255,22 @@ def scrape_videos(pornstar_limit=10):
                 db.collection("videos").add(video_doc)
                 added += 1
                 pornstar_added += 1
-                print(f"  [{vid_id}] ADDED: {title[:55]}")
-                print(f"         Pornstar: {pornstar_name} | Category: {category or 'none'}")
+                print(f"  [{vid_id}] ADDED: {title[:55]}", flush=True)
+                print(f"         Pornstar: {pornstar_name} | Category: {category or 'none'}", flush=True)
             except Exception as e:
-                print(f"  [{vid_id}] ERROR: {e}")
+                print(f"  [{vid_id}] ERROR: {e}", flush=True)
                 skipped += 1
 
             time.sleep(1)
 
-        print(f"  -> {pornstar_name}: {pornstar_added} videos added")
+        print(f"  -> {pornstar_name}: {pornstar_added} videos added", flush=True)
 
-    print(f"\n{'='*50}")
-    print(f"DONE | Added: {added} | Skipped: {skipped}")
-    print(f"{'='*50}")
+    print(f"\n{'='*50}", flush=True)
+    print(f"DONE | Added: {added} | Skipped: {skipped}", flush=True)
+    print(f"{'='*50}", flush=True)
 
 # ── Entry Point ─────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     limit = int(sys.argv[1]) if len(sys.argv) > 1 else 10
-    print(f"LUSTBOING Scraper - Fetching up to {limit} videos per pornstar\n")
+    print(f"LUSTBOING Scraper - Fetching up to {limit} videos per pornstar\n", flush=True)
     scrape_videos(pornstar_limit=limit)

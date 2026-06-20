@@ -697,15 +697,7 @@ async function loadPlayerContent(video, platform, iframeWrap) {
       return;
     }
 
-    /* 2) If backend unavailable, try the stored streamUrl directly */
-    if (video.streamUrl) {
-      clearTimeout(playerStalledTimeout);
-      console.warn('[player] Backend unavailable, trying stored stream URL');
-      renderVideoPlayer(iframeWrap, video.streamUrl, video.thumbUrl, video.title);
-      return;
-    }
-
-    /* 3) Last resort: iframe embed */
+    /* Last resort: iframe embed */
     clearTimeout(playerStalledTimeout);
     console.warn('[player] No stream URL, falling back to iframe embed');
     renderEmbedIframe(iframeWrap, platform, video);
