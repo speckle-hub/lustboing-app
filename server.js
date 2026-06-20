@@ -139,6 +139,7 @@ function runYtDlp(videoUrl) {
     // Build yt-dlp args with dynamic headers based on the video URL's platform
     const args = [
       '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      '--impersonate', 'chrome',
       '--no-check-certificates',
       '--geo-bypass',
       '--dump-json',
@@ -148,7 +149,7 @@ function runYtDlp(videoUrl) {
     // Dynamically set Referer from the video URL so each platform gets the correct one
     try {
       const parsed = new URL(videoUrl);
-      args.splice(2, 0, '--add-header', 'Referer: ' + parsed.origin + '/');
+      args.splice(3, 0, '--add-header', 'Referer: ' + parsed.origin + '/');
     } catch {}
 
     const proc = spawn('yt-dlp', args, {

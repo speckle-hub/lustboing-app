@@ -745,6 +745,12 @@ function renderVideoPlayer(container, src, poster, title) {
 
 /* Render iframe embed (final fallback) */
 function renderEmbedIframe(container, platform, video) {
+  // Use sandbox that blocks top-level navigation to prevent sites
+  // like xHamster from redirecting the parent page away from our site.
+  // We intentionally exclude allow-top-navigation and
+  // allow-top-navigation-by-user-activation.
+  const sandboxAttr = 'allow-scripts allow-same-origin allow-forms allow-popups allow-presentation';
+
   container.innerHTML = `
     <iframe
       id="embed-iframe"
@@ -753,6 +759,7 @@ function renderEmbedIframe(container, platform, video) {
       scrolling="no"
       allowfullscreen
       allow="autoplay; fullscreen"
+      sandbox="${sandboxAttr}"
       title="${escapeHtml(video.title)}"
     ></iframe>
   `;
