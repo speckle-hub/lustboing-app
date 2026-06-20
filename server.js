@@ -133,15 +133,10 @@ app.get('/api/proxy', (req, res) => {
 });
 
 // ── Run yt-dlp and return parsed JSON ────────────────
-// Tries 'python3' first, then falls back to 'python'
+// Calls the yt-dlp binary directly (installed at /usr/local/bin/yt-dlp in Docker)
 function runYtDlp(videoUrl) {
-  return trySpawnYtDlp('python3', videoUrl)
-    .catch(() => trySpawnYtDlp('python', videoUrl));
-}
-
-function trySpawnYtDlp(pythonCmd, videoUrl) {
   return new Promise((resolve, reject) => {
-    const proc = spawn(pythonCmd, ['-m', 'yt_dlp', '--dump-json', videoUrl], {
+    const proc = spawn('yt-dlp', ['--dump-json', videoUrl], {
       timeout: 45000,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
