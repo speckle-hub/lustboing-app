@@ -136,15 +136,23 @@ app.get('/api/proxy', (req, res) => {
 // Calls the yt-dlp binary directly (installed at /usr/local/bin/yt-dlp in Docker)
 function runYtDlp(videoUrl) {
   return new Promise((resolve, reject) => {
-    const proc = spawn('yt-dlp', [
+    // Build yt-dlp args with dynamic headers based on the video URL's platform
+    const args = [
       '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-      '--add-header', 'Referer: https://xhamster.com/',
-      '--add-header', 'Origin: https://xhamster.com',
       '--no-check-certificates',
       '--geo-bypass',
       '--dump-json',
       videoUrl
-    ], {
+    ];
+
+    // Dynamically set Referer from the video URL so each platform gets the correct one
+    try {
+      const parsed = new URL(videoUrl);
+      const referer = parsed.protocol + '//' + parsed.hostname + '/';
+      args.splice(2, 0, '--add-header', 'Referer: ' + referer);
+    } catch {}
+
+    const proc = spawn('yt-dlp', args, {
       timeout: 45000,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
