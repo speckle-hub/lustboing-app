@@ -78,7 +78,7 @@ const PLATFORMS = {
   pornhub:  { name: 'Pornhub',  color: '#ff9000', icon: '🟠', embedBase: (id) => `https://www.pornhub.com/embed/${id}`,              sourceBase: (id) => `https://www.pornhub.com/view_video.php?viewkey=${id}` },
   xvideos:  { name: 'XVideos',  color: '#cc0000', icon: '🔴', embedBase: (id) => `https://www.xvideos.com/embedframe/${id}`,          sourceBase: (id) => `https://www.xvideos.com/video${id}` },
   xnxx:     { name: 'XNXX',     color: '#d63031', icon: '🔴', embedBase: (id) => `https://www.xnxx.com/embedframe/${id}`,             sourceBase: (id) => `https://www.xnxx.com/video-${id}` },
-  xhamster: { name: 'xHamster', color: '#f9a825', icon: '🟡', embedBase: (id) => `https://xhamster.com/xembed.php?video=${id}`,       sourceBase: (id) => `https://xhamster.com/videos/${id}` },
+  xhamster: { name: 'xHamster', color: '#f9a825', icon: '🟡', embedBase: (id) => `https://xhamster.com/embed/${id}`,       sourceBase: (id) => `https://xhamster.com/videos/${id}` },
   youporn:  { name: 'YouPorn',  color: '#e91e63', icon: '🩷', embedBase: (id) => `https://www.youporn.com/embed/${id}`,               sourceBase: (id) => `https://www.youporn.com/watch/${id}` },
   redtube:  { name: 'RedTube',  color: '#e53935', icon: '🔴', embedBase: (id) => `https://embed.redtube.com/?id=${id}&bgcolor=000000`, sourceBase: (id) => `https://www.redtube.com/${id}` },
 };
@@ -753,6 +753,7 @@ function renderEmbedIframe(container, platform, video) {
       scrolling="no"
       allowfullscreen
       allow="autoplay; fullscreen"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
       title="${escapeHtml(video.title)}"
     ></iframe>
   `;
