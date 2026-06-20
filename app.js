@@ -145,38 +145,32 @@ let state = {
    FIREBASE — Real-time Firestore listener
 ══════════════════════════════════════════════════ */
 
-/* Sample video data for demo/testing */
-const SAMPLE_VIDEOS = [];
+/* ── YouPorn Only: SAMPLE VIDEOS ──────────────── */
+/* All videos are YouPorn embeds — they work perfectly
+   without redirecting and play directly on the site. */
+
+const SAMPLE_VIDEOS = [
+  { id: 'yp01', platform: 'youporn', videoId: '237492001', title: 'Japanese MILF cheating wife CREAMPIED',              duration: '32:15', views: '142K',  tags: ['milf', 'asian milf', 'creampie'],                                pornstar: null,          category: 'Asian MILF' },
+  { id: 'yp02', platform: 'youporn', videoId: '235377161', title: 'Argentina Big BOOBS got a big CUMSHOT',               duration: '18:40', views: '98K',   tags: ['milf', 'big tits milf', 'latina milf'],                          pornstar: null,          category: 'Latina MILF' },
+  { id: 'yp03', platform: 'youporn', videoId: '234219271', title: 'She wanted to leave, but changed her mind',            duration: '24:10', views: '203K',  tags: ['milf', 'amateur milf', 'big tits'],                              pornstar: null,          category: 'Amateur MILF' },
+  { id: 'yp04', platform: 'youporn', videoId: '233139581', title: 'Super Tiny Petite girl fucked really hard (CREAMPIE)', duration: '15:55', views: '176K',  tags: ['milf', 'amateur milf', 'creampie'],                             pornstar: null,          category: 'Amateur MILF' },
+  { id: 'yp05', platform: 'youporn', videoId: '231220391', title: 'Step Sis be quiet! Parents will hear us!',             duration: '21:30', views: '312K',  tags: ['milf', 'step mom', 'amateur'],                                  pornstar: null,          category: 'Step Mom' },
+  { id: 'yp06', platform: 'youporn', videoId: '230454381', title: 'Gattouz ate my pussy until I squirted in his mouth',   duration: '26:20', views: '87K',   tags: ['milf', 'amateur milf', 'mature'],                              pornstar: null,          category: 'Mature MILF' },
+  { id: 'yp07', platform: 'youporn', videoId: '230151411', title: 'Colombian Tiny Pussy CREAMPIED for the first time',    duration: '19:45', views: '154K',  tags: ['milf', 'latina milf', 'creampie'],                              pornstar: null,          category: 'Latina MILF' },
+  { id: 'yp08', platform: 'youporn', videoId: '229638531', title: 'Thick Aussie girl meets the Arabic Bull',               duration: '28:00', views: '67K',   tags: ['milf', 'bbw milf', 'mature'],                                  pornstar: null,          category: 'BBW MILF' },
+  { id: 'yp09', platform: 'youporn', videoId: '229054791', title: '4k Resolution Myanmar Porn',                           duration: '35:10', views: '45K',   tags: ['milf', 'asian milf', 'amateur'],                               pornstar: null,          category: 'Asian MILF' },
+  { id: 'yp10', platform: 'youporn', videoId: '227736361', title: 'Virgin Step Sister Wants To Learn How To Fuck',        duration: '22:50', views: '428K',  tags: ['milf', 'step mom', 'teen'],                                     pornstar: null,          category: 'Step Mom' },
+  { id: 'yp11', platform: 'youporn', videoId: '227727271', title: 'Venezuelan Baddie Creampied after Party',              duration: '17:25', views: '129K',  tags: ['milf', 'latina milf', 'creampie'],                              pornstar: null,          category: 'Latina MILF' },
+  { id: 'yp12', platform: 'youporn', videoId: '226734271', title: 'Iranian-Filipina mixed model got CREAMPIED',           duration: '23:40', views: '91K',   tags: ['milf', 'asian milf', 'mature'],                                pornstar: null,          category: 'Asian MILF' },
+  { id: 'yp13', platform: 'youporn', videoId: '226194141', title: 'Hot girl with a pink pussy got a facial and creampie', duration: '14:30', views: '201K',  tags: ['milf', 'amateur milf', 'big tits'],                            pornstar: null,          category: 'Amateur MILF' },
+  { id: 'yp14', platform: 'youporn', videoId: '225965571', title: 'I woke up with Step Sister in my bed',                 duration: '20:15', views: '356K',  tags: ['milf', 'step mom', 'amateur'],                                  pornstar: null,          category: 'Step Mom' },
+  { id: 'yp15', platform: 'youporn', videoId: '225442911', title: 'Chinese Famous Singer Got CREAMPIED',                  duration: '27:35', views: '78K',   tags: ['milf', 'asian milf', 'big tits'],                              pornstar: null,          category: 'Asian MILF' },
+  { id: 'yp16', platform: 'youporn', videoId: '225352661', title: 'He Fucked his Stepsister while she was on the Phone',  duration: '19:50', views: '267K',  tags: ['milf', 'step mom', 'amateur'],                                  pornstar: null,          category: 'Step Mom' },
+];
 
 function startFirestoreSync() {
-  if (!firebaseReady || !db) {
-    console.warn('Firebase not ready, using sample data');
-    loadSampleVideos();
-    return;
-  }
-  
-  try {
-    db.collection('videos')
-      .orderBy('addedAt', 'desc')
-      .onSnapshot(snapshot => {
-        VIDEO_DB = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-        /* Recompute performer counts */
-        PORNSTAR_DB.forEach(ps => {
-          ps.videos = VIDEO_DB.filter(v => v.pornstar === ps.name).length;
-        });
-
-        applyFilters();
-        renderPornstars();
-        renderCategories();
-      }, err => {
-        console.warn('Firestore sync error:', err);
-        loadSampleVideos();
-      });
-  } catch(e) {
-    console.warn('Firebase not initialized, using sample data');
-    loadSampleVideos();
-  }
+  // Using built-in YouPorn sample videos directly — no Firestore needed!
+  loadSampleVideos();
 }
 
 function loadSampleVideos() {
