@@ -149,7 +149,7 @@ function runYtDlp(videoUrl) {
     // Dynamically set Referer from the video URL so each platform gets the correct one
     try {
       const parsed = new URL(videoUrl);
-      args.splice(3, 0, '--add-header', 'Referer: ' + parsed.origin + '/');
+      args.splice(4, 0, '--add-header', 'Referer: ' + parsed.origin + '/');
     } catch {}
 
     const proc = spawn('yt-dlp', args, {
