@@ -753,9 +753,7 @@ function renderEmbedIframe(container, platform, video) {
       scrolling="no"
       allowfullscreen
       allow="autoplay; fullscreen"
-      sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
       title="${escapeHtml(video.title)}"
-      referrerpolicy="no-referrer"
     ></iframe>
   `;
 }
