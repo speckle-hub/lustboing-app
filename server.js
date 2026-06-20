@@ -133,9 +133,15 @@ app.get('/api/proxy', (req, res) => {
 });
 
 // ── Run yt-dlp and return parsed JSON ────────────────
+// Tries 'python3' first, then falls back to 'python'
 function runYtDlp(videoUrl) {
+  return trySpawnYtDlp('python3', videoUrl)
+    .catch(() => trySpawnYtDlp('python', videoUrl));
+}
+
+function trySpawnYtDlp(pythonCmd, videoUrl) {
   return new Promise((resolve, reject) => {
-    const proc = spawn('python', ['-m', 'yt_dlp', '--dump-json', videoUrl], {
+    const proc = spawn(pythonCmd, ['-m', 'yt_dlp', '--dump-json', videoUrl], {
       timeout: 45000,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
@@ -168,15 +174,5 @@ function runYtDlp(videoUrl) {
 
 // ── Start ────────────────────────────────────────────
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`
-╔═══════════════════════════════════════════════╗
-║         LUSTBOING Media Server                ║
-║                                               ║
-║   Open:  http://localhost:${String(PORT).padEnd(5)}               ║
-║                                               ║
-║   Streams are resolved dynamically via        ║
-║   yt-dlp and proxied through this server      ║
-║   to bypass CORS and URL expiry issues.       ║
-╚═══════════════════════════════════════════════╝
-  `);
+  console.log(`\n\x1b[35m╔═══════════════════════════════════════════════╗\n║         LUSTBOING Media Server                ║\n║                                               ║\n║   Open:  http://localhost:${String(PORT).padEnd(5)}               ║\n║                                               ║\n║   Streams are resolved dynamically via        ║\n║   yt-dlp and proxied through this server      ║\n║   to bypass CORS and URL expiry issues.       ║\n╚═══════════════════════════════════════════════╝\x1b[0m\n  `);
 });
