@@ -7,7 +7,7 @@
 'use strict';
 
 /* ── Backend server config ──────────────────────────── */
-const BACKEND_URL = window.location.origin; // same origin as the page (server.js)
+const BACKEND_URL = 'https://lustboing-backend.onrender.com'; // Render backend
 
 /* ── Fetch a fresh stream URL from the backend ────── */
 async function fetchFreshStreamUrl(videoUrl) {
