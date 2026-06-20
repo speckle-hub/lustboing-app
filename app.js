@@ -753,7 +753,7 @@ function renderEmbedIframe(container, platform, video) {
       scrolling="no"
       allowfullscreen
       allow="autoplay; fullscreen"
-      sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+      sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-presentation"
       title="${escapeHtml(video.title)}"
     ></iframe>
   `;
